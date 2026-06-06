@@ -1,0 +1,8 @@
+{
+  "name": "Tannu World",
+  "description": "Premium luxury men's fashion and accessories store",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
