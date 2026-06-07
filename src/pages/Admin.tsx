@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { fetchAllProducts, addProduct as storeAddProduct, updateProduct as storeUpdateProduct, removeProduct as storeRemoveProduct, uploadImage } from '../lib/store';
+import { auth } from '../lib/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Edit2, LogOut, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -8,6 +10,7 @@ import { Link } from 'react-router-dom';
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -18,6 +21,8 @@ export default function Admin() {
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const adminEmail = 'ranveerkumar2753@gmail.com';
+
   const loadData = async () => {
     const data = await fetchAllProducts();
     setProducts(data);
@@ -26,22 +31,43 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadData();
-    }
-  }, [isAuthenticated]);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user && user.email === adminEmail);
+      setIsLoadingAuth(false);
+      if (user && user.email === adminEmail) {
+        loadData();
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === 'admin123') {
-      setIsAuthenticated(true);
-    } else {
-       alert('Invalid password. Hint: admin123');
+    if (!password) {
+      alert('Please enter a password');
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, adminEmail, password);
+    } catch (error: any) {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        try {
+          // If the user doesn't exist yet, we can create it for the first time
+          await createUserWithEmailAndPassword(auth, adminEmail, password);
+          alert('Admin account created successfully with this password.');
+        } catch (createError: any) {
+          console.error(createError);
+          alert(`Authentication failed: Invalid credentials`);
+        }
+      } else {
+        console.error(error);
+        alert(`Authentication failed: ${error.message}`);
+      }
     }
   };
 
   const handleLogout = async () => {
-    setIsAuthenticated(false);
+    await signOut(auth);
     setPassword('');
   };
 
