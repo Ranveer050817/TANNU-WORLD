@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import autoConfig from '../../firebase-applet-config.json';
@@ -25,5 +24,4 @@ export const db = (!isCustomProject && autoConfig.firestoreDatabaseId)
   ? getFirestore(app, autoConfig.firestoreDatabaseId)
   : getFirestore(app); 
   
-export const auth = getAuth(app);
 export const storage = getStorage(app);
