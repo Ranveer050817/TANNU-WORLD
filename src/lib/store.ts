@@ -6,26 +6,20 @@ import { handleFirestoreError, OperationType } from './firebaseErrors';
 import { MOCK_PRODUCTS } from './mockData';
 
 export const uploadImage = async (file: File): Promise<string> => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const fileExtension = file.name.split('.').pop();
-      const fileName = `products/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
-      const storageRef = ref(storage, fileName);
-      
-      // Firebase Storage SDK sometimes hangs indefinitely if the bucket isn't enabled in the console.
-      // We set a 15 second timeout to provide a helpful error message instead of an infinite loading state.
-      const timeout = setTimeout(() => {
-        reject(new Error("Storage upload timed out. This usually means Firebase Storage is not initialized in your Firebase Console. Please go to console.firebase.google.com, select your project, click on 'Storage' and click 'Get Started'."));
-      }, 15000);
-
-      await uploadBytes(storageRef, file);
-      clearTimeout(timeout);
-      
-      const url = await getDownloadURL(storageRef);
-      resolve(url);
-    } catch (error: any) {
-      reject(new Error(`Upload failed: ${error.message}`));
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.onerror = (error) => {
+      reject(new Error(`Failed to convert image to base64: ${error}`));
+    };
+    // Note: Firestore has a 1 MiB document size limit.
+    if (file.size > 800000) {
+      reject(new Error("Image size too large. Please select an image under 800KB."));
+      return;
     }
+    reader.readAsDataURL(file);
   });
 };
 
