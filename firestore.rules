@@ -25,7 +25,7 @@ service cloud.firestore {
         && data.category is string && data.category.size() > 0 && data.category.size() <= 50
         && data.status is string && data.status.size() > 0 && data.status.size() <= 50
         && (!data.keys().hasAny(['description']) || (data.description is string && data.description.size() <= 2000))
-        && (!data.keys().hasAny(['image']) || (data.image is string && data.image.size() <= 2000));
+        && (!data.keys().hasAny(['image']) || (data.image is string));
     }
 
     match /products/{productId} {
