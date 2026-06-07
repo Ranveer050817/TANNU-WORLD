@@ -46,9 +46,9 @@ export default function Admin() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Authentication failed.');
+      alert(`Authentication failed: ${error.message || 'Unknown error'}`);
     }
   };
 
