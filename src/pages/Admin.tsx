@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { fetchAllProducts, addProduct as storeAddProduct, updateProduct as storeUpdateProduct, removeProduct as storeRemoveProduct, uploadImage } from '../lib/store';
-import { auth } from '../lib/firebase';
-import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Edit2, LogOut, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [password, setPassword] = useState('');
   
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -28,29 +26,23 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
-      setIsLoadingAuth(false);
-      if (user) {
-        loadData();
-      }
-    });
-    return () => unsubscribe();
-  }, []);
+    if (isAuthenticated) {
+      loadData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error: any) {
-      console.error(error);
-      alert(`Authentication failed: ${error.message || 'Unknown error'}\n\nIf you are on Netlify, you MUST add this domain to your Firebase Authorized Domains in the Firebase Console.`);
+    if (password === 'admin123') {
+      setIsAuthenticated(true);
+    } else {
+       alert('Invalid password. Hint: admin123');
     }
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
+    setIsAuthenticated(false);
+    setPassword('');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,10 +104,6 @@ export default function Admin() {
 
   const activeCategoriesCount = Array.from(new Set(products.map(p => p.category))).length;
 
-  if (isLoadingAuth) {
-    return <div className="min-h-screen bg-black flex items-center justify-center"><p className="text-white">Loading...</p></div>;
-  }
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -125,13 +113,25 @@ export default function Admin() {
           className="bg-[#1a1a1a] p-8 border border-white/10 w-full max-w-sm text-center"
         >
           <h2 className="text-2xl font-display italic text-white mb-6">Admin <span className="text-gold-500 font-bold uppercase not-italic">Login</span></h2>
-          <button 
-            onClick={handleLogin}
-            className="w-full bg-gold-500 text-black font-bold uppercase text-xs tracking-widest py-3 hover:bg-white transition-colors"
-          >
-            Sign in with Google
-          </button>
-          <p className="text-white/40 text-[10px] text-center mt-4 uppercase tracking-widest">Only authorized admins can make changes</p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-2">Password</label>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black border border-white/20 p-2 text-white focus:border-gold-500 outline-none transition-colors text-sm"
+                placeholder="Enter password"
+              />
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-gold-500 text-black font-bold uppercase text-xs tracking-widest py-3 hover:bg-white transition-colors"
+            >
+              Access Dashboard
+            </button>
+            <p className="text-white/40 text-[10px] text-center mt-4 uppercase tracking-widest">Demo Pass: admin123</p>
+          </form>
         </motion.div>
       </div>
     );
