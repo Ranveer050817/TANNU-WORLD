@@ -1,7 +1,6 @@
-import Papa from 'papaparse';
 import { Product } from '../types';
 
-const MOCK_PRODUCTS: Product[] = [
+export const MOCK_PRODUCTS: Product[] = [
   // Shoes
   { id: 's1', category: 'Shoes', name: 'Classic Leather Oxfords', price: '₹4,999', image: 'https://images.unsplash.com/photo-1614252339460-e1c15560965e?auto=format&fit=crop&q=80', description: 'Genuine leather oxford shoes.', status: 'In Stock' },
   { id: 's2', category: 'Shoes', name: 'Suede Chelsea Boots', price: '₹5,499', image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?auto=format&fit=crop&q=80', description: 'Premium suede chelsea boots.', status: 'In Stock' },
@@ -51,49 +50,3 @@ const MOCK_PRODUCTS: Product[] = [
   { id: 'a4', category: 'Accessories', name: 'Leather Bracelet', price: '₹699', image: 'https://images.unsplash.com/photo-1579977825588-467ce19eaacf?auto=format&fit=crop&q=80', description: 'Braided leather wrist bracelet with steel clasp.', status: 'In Stock' },
   { id: 'a5', category: 'Accessories', name: 'Pocket Square Set', price: '₹1,299', image: 'https://images.unsplash.com/photo-1605051939527-fac4cc0ef073?auto=format&fit=crop&q=80', description: 'Set of three silk blend pocket squares.', status: 'In Stock' },
 ];
-
-export const getSheetUrl = () => {
-  return localStorage.getItem('tannu_world_sheet_url') || '';
-};
-
-export const setSheetUrl = (url: string) => {
-  localStorage.setItem('tannu_world_sheet_url', url);
-};
-
-export const fetchProducts = async (): Promise<Product[]> => {
-  const url = getSheetUrl();
-  if (!url) {
-    return MOCK_PRODUCTS;
-  }
-
-  try {
-    const response = await fetch(url);
-    const csvText = await response.text();
-
-    return new Promise((resolve, reject) => {
-      Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          const products: Product[] = results.data.map((row: any, index: number) => ({
-            id: `sheet-item-${index}`,
-            category: row['Category'] || 'Accessories',
-            name: row['Product Name'] || 'Unknown Product',
-            price: row['Price'] ? `₹${row['Price'].replace(/[^0-9.]/g, '')}` : '₹0',
-            image: row['Image URL'] || 'https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?auto=format&fit=crop&q=80',
-            description: row['Description'] || '',
-            status: row['Status'] || 'In Stock',
-          }));
-          resolve(products.length > 0 ? products : MOCK_PRODUCTS);
-        },
-        error: (error: any) => {
-          console.warn("Error parsing CSV:", error);
-          resolve(MOCK_PRODUCTS); // Fallback on parsing error
-        }
-      });
-    });
-  } catch (error) {
-    console.warn("Error fetching Google Sheet:", error);
-    return MOCK_PRODUCTS; // Fallback on network error
-  }
-};

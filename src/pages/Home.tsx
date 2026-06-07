@@ -3,7 +3,7 @@ import Hero from '../components/Hero';
 import ProductCard from '../components/ProductCard';
 import AdminSection from '../components/AdminSection';
 import { Product } from '../types';
-import { fetchProducts } from '../lib/googleSheets';
+import { fetchAllProducts } from '../lib/store';
 import { Instagram, MapPin, Star, Phone, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -14,7 +14,7 @@ export default function Home() {
 
   useEffect(() => {
     const loadData = async () => {
-      const data = await fetchProducts();
+      const data = await fetchAllProducts();
       setProducts(data);
       setLoading(false);
     };
