@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Product } from '../types';
 import { fetchAllProducts, addProduct as storeAddProduct, updateProduct as storeUpdateProduct, removeProduct as storeRemoveProduct, uploadImage } from '../lib/store';
 import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { motion } from 'motion/react';
 import { Plus, Trash2, Edit2, LogOut, Check, X, Image as ImageIcon, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -43,32 +42,17 @@ export default function Admin() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) {
-      alert('Please enter a password');
-      return;
-    }
     try {
-      await signInWithEmailAndPassword(auth, adminEmail, password);
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     } catch (error: any) {
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        try {
-          // If the user doesn't exist yet, we can create it for the first time
-          await createUserWithEmailAndPassword(auth, adminEmail, password);
-          alert('Admin account created successfully with this password.');
-        } catch (createError: any) {
-          console.error(createError);
-          alert(`Authentication failed: Invalid credentials`);
-        }
-      } else {
-        console.error(error);
-        alert(`Authentication failed: ${error.message}`);
-      }
+      console.error(error);
+      alert(`Authentication failed: ${error.message}`);
     }
   };
 
   const handleLogout = async () => {
     await signOut(auth);
-    setPassword('');
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,6 +114,10 @@ export default function Admin() {
 
   const activeCategoriesCount = Array.from(new Set(products.map(p => p.category))).length;
 
+  if (isLoadingAuth) {
+    return <div className="min-h-screen bg-black flex items-center justify-center"><p className="text-white">Loading...</p></div>;
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
@@ -139,25 +127,13 @@ export default function Admin() {
           className="bg-[#1a1a1a] p-8 border border-white/10 w-full max-w-sm text-center"
         >
           <h2 className="text-2xl font-display italic text-white mb-6">Admin <span className="text-gold-500 font-bold uppercase not-italic">Login</span></h2>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-[10px] uppercase tracking-widest text-white/50 mb-2">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black border border-white/20 p-2 text-white focus:border-gold-500 outline-none transition-colors text-sm"
-                placeholder="Enter password"
-              />
-            </div>
-            <button 
-              type="submit"
-              className="w-full bg-gold-500 text-black font-bold uppercase text-xs tracking-widest py-3 hover:bg-white transition-colors"
-            >
-              Access Dashboard
-            </button>
-            <p className="text-white/40 text-[10px] text-center mt-4 uppercase tracking-widest">Demo Pass: admin123</p>
-          </form>
+          <button 
+            onClick={handleLogin}
+            className="w-full bg-gold-500 text-black font-bold uppercase text-xs tracking-widest py-3 hover:bg-white transition-colors"
+          >
+            Sign in with Google
+          </button>
+          <p className="text-white/40 text-[10px] text-center mt-4 uppercase tracking-widest">Only authorized admins can make changes</p>
         </motion.div>
       </div>
     );
